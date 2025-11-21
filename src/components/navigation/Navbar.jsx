@@ -1,4 +1,24 @@
 export default function Navbar() {
+  const handleFileImport = (event) => {
+    const file = event.target.files?.[0];
+    if (file && file.name.endsWith('.geojson')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const geojsonData = JSON.parse(e.target.result);
+          console.log('GeoJSON data:', geojsonData);
+          // TODO: Process the GeoJSON data here
+        } catch (error) {
+          console.error('Error parsing GeoJSON file:', error);
+          alert('Invalid GeoJSON file');
+        }
+      };
+      reader.readAsText(file);
+    } else {
+      alert('Please select a .geojson file');
+    }
+  };
+
   return (
     <nav className="w-full p-2 bg-base-300 flex justify-between items-center">
       {/* title */}
@@ -6,9 +26,16 @@ export default function Navbar() {
 
       {/* right action */}
       <div className="ml-auto h-full">
-        <button className="btn btn-primary">
+        <input
+          type="file"
+          accept=".geojson"
+          onChange={handleFileImport}
+          className="hidden"
+          id="geojson-upload"
+        />
+        <label htmlFor="geojson-upload" className="btn btn-primary cursor-pointer">
           Import Graph
-        </button>
+        </label>
       </div>
     </nav>
   )
