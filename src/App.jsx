@@ -5,12 +5,12 @@ import { useState } from 'react'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [geojsonData, setGeojsonData] = useState(null)
 
   return (
     <div className="w-full h-screen grid grid-rows-[auto_1fr]">
-      <Navbar />
-      <HomePage />
+      <Navbar onGeojsonImport={setGeojsonData} />
+      <HomePage geojsonData={geojsonData} />
     </div>
   )
 }

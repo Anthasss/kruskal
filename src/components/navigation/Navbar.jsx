@@ -1,4 +1,4 @@
-export default function Navbar() {
+export default function Navbar({ onGeojsonImport }) {
   const handleFileImport = (event) => {
     const file = event.target.files?.[0];
     if (file && file.name.endsWith('.geojson')) {
@@ -7,7 +7,7 @@ export default function Navbar() {
         try {
           const geojsonData = JSON.parse(e.target.result);
           console.log('GeoJSON data:', geojsonData);
-          // TODO: Process the GeoJSON data here
+          onGeojsonImport(geojsonData);
         } catch (error) {
           console.error('Error parsing GeoJSON file:', error);
           alert('Invalid GeoJSON file');
