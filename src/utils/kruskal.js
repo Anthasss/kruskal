@@ -31,59 +31,77 @@ class UnionFind {
   }
 }
 
+// Helper function to find closest vertex index for a coordinate
+function findVertexIndex(vertices, coord, tolerance = 0.00001) {
+  for (let i = 0; i < vertices.length; i++) {
+    const [lon1, lat1] = vertices[i].coords;
+    const [lon2, lat2] = coord;
+    const distance = Math.sqrt(Math.pow(lon1 - lon2, 2) + Math.pow(lat1 - lat2, 2));
+    if (distance < tolerance) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+// Calculate distance using Haversine formula
+function calculateDistance(coord1, coord2) {
+  const [lon1, lat1] = coord1;
+  const [lon2, lat2] = coord2;
+  
+  const R = 6371000; // Earth's radius in meters
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  
+  return R * c;
+}
+
 export function kruskalMST(geojsonData) {
   if (!geojsonData) return { edges: [], vertices: [] };
 
   const vertices = [];
   const edges = [];
-  const vertexMap = new Map(); // Map vertex id to index
 
-  // Extract vertices from GeoJSON
+  // Extract vertices (Points) from GeoJSON
   if (geojsonData.type === 'FeatureCollection') {
-    geojsonData.features.forEach(feature => {
+    geojsonData.features.forEach((feature, idx) => {
       if (feature.geometry.type === 'Point') {
-        const id = feature.properties?.id || feature.properties?.name || vertices.length;
-        vertexMap.set(id, vertices.length);
         vertices.push({
-          id: id,
+          id: feature.properties?.name || feature.properties?.id || `Point ${idx}`,
           coords: feature.geometry.coordinates
         });
       }
     });
-  } else if (geojsonData.type === 'Feature' && geojsonData.geometry.type === 'Point') {
-    const id = geojsonData.properties?.id || geojsonData.properties?.name || 0;
-    vertexMap.set(id, 0);
-    vertices.push({
-      id: id,
-      coords: geojsonData.geometry.coordinates
-    });
-  }
 
-  // Calculate all edges between consecutive vertices
-  for (let i = 0; i < vertices.length - 1; i++) {
-    const [lon1, lat1] = vertices[i].coords;
-    const [lon2, lat2] = vertices[i + 1].coords;
-    
-    // Haversine formula for distance calculation
-    const R = 6371000; // Earth's radius in meters
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distance = R * c;
-
-    edges.push({
-      from: vertices[i].id,
-      to: vertices[i + 1].id,
-      fromIndex: i,
-      toIndex: i + 1,
-      distance: distance,
-      coords: [vertices[i].coords, vertices[i + 1].coords]
+    // Extract edges (LineStrings) from GeoJSON
+    geojsonData.features.forEach(feature => {
+      if (feature.geometry.type === 'LineString') {
+        const coords = feature.geometry.coordinates;
+        
+        // Find vertex indices for start and end points of the line
+        const startIdx = findVertexIndex(vertices, coords[0]);
+        const endIdx = findVertexIndex(vertices, coords[coords.length - 1]);
+        
+        if (startIdx !== -1 && endIdx !== -1) {
+          const distance = calculateDistance(coords[0], coords[coords.length - 1]);
+          
+          edges.push({
+            from: vertices[startIdx].id,
+            to: vertices[endIdx].id,
+            fromIndex: startIdx,
+            toIndex: endIdx,
+            distance: distance,
+            coords: [vertices[startIdx].coords, vertices[endIdx].coords]
+          });
+        }
+      }
     });
   }
 

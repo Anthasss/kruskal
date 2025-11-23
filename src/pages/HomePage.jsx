@@ -28,7 +28,7 @@ export default function HomePage({ geojsonData, showMST }) {
             <GeoJSON 
               data={geojsonData} 
               key={JSON.stringify(geojsonData)}
-              style={{ color: '#94a3b8', weight: 2, opacity: 0.8 }}
+              style={{ color: "yellow", weight: 4, opacity: 0.8 }}
             />
           )}
           {/* MST Overlay */}
