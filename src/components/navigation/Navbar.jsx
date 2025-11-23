@@ -1,4 +1,4 @@
-export default function Navbar({ onGeojsonImport, showMST, onToggleMST }) {
+export default function Navbar({ onGeojsonImport, showMST, onToggleMST, hasGraph }) {
   const handleFileImport = (event) => {
     const file = event.target.files?.[0];
     if (file && file.name.endsWith('.geojson')) {
@@ -26,12 +26,14 @@ export default function Navbar({ onGeojsonImport, showMST, onToggleMST }) {
 
       {/* right action */}
       <div className="ml-auto h-full flex gap-2 items-center">
-        <button 
-          onClick={onToggleMST}
-          className="btn btn-secondary"
-        >
-          {showMST ? 'Show Original' : 'Show MST'}
-        </button>
+        {hasGraph && (
+          <button 
+            onClick={onToggleMST}
+            className="btn btn-secondary"
+          >
+            {showMST ? 'Show Original' : 'Show MST'}
+          </button>
+        )}
         <input
           type="file"
           accept=".geojson"
