@@ -6,11 +6,16 @@ import './App.css'
 
 function App() {
   const [geojsonData, setGeojsonData] = useState(null)
+  const [showMST, setShowMST] = useState(true)
 
   return (
     <div className="w-full h-screen grid grid-rows-[auto_1fr]">
-      <Navbar onGeojsonImport={setGeojsonData} />
-      <HomePage geojsonData={geojsonData} />
+      <Navbar 
+        onGeojsonImport={setGeojsonData} 
+        showMST={showMST}
+        onToggleMST={() => setShowMST(!showMST)}
+      />
+      <HomePage geojsonData={geojsonData} showMST={showMST} />
     </div>
   )
 }

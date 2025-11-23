@@ -1,4 +1,4 @@
-export default function Navbar({ onGeojsonImport }) {
+export default function Navbar({ onGeojsonImport, showMST, onToggleMST }) {
   const handleFileImport = (event) => {
     const file = event.target.files?.[0];
     if (file && file.name.endsWith('.geojson')) {
@@ -25,7 +25,13 @@ export default function Navbar({ onGeojsonImport }) {
       <h1 className="text-xl font-bold">Kruskal Algorithm Simulator</h1>
 
       {/* right action */}
-      <div className="ml-auto h-full">
+      <div className="ml-auto h-full flex gap-2 items-center">
+        <button 
+          onClick={onToggleMST}
+          className="btn btn-secondary"
+        >
+          {showMST ? 'Show Original' : 'Show MST'}
+        </button>
         <input
           type="file"
           accept=".geojson"

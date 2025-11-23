@@ -57,7 +57,7 @@ export default function DistanceTable({ geojsonData }) {
 
   return (
     <div className="w-full h-full bg-base-200 p-4 flex flex-col overflow-hidden">
-      <h2 className="text-lg font-bold mb-4 flex-shrink-0">Vertex Distances</h2>
+      <h2 className="text-lg font-bold mb-4 shrink-0">Vertex Distances</h2>
       
       {distances.length === 0 ? (
         <p className="text-sm text-gray-500">Import a GeoJSON file to see distances</p>

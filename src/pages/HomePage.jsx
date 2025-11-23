@@ -4,19 +4,19 @@ import DistanceTable from '../components/DistanceTable';
 import { kruskalMST } from '../utils/kruskal';
 import 'leaflet/dist/leaflet.css';
 
-export default function HomePage({ geojsonData }) {
-  const mst = useMemo(() => {
+export default function HomePage({ geojsonData, showMST }) {
+  const mst = useMemo(() => { 
     return kruskalMST(geojsonData);
   }, [geojsonData]);
 
   return (
-    <div className="w-full h-full flex">
+    <div className="w-full h-full flex overflow-hidden">
 
       {/* main content - map */}
       <div className="flex-1 h-full">
         <MapContainer 
           center={[-10.1564148,123.6669857]} 
-          zoom={20} 
+          zoom={30} 
           className="w-full h-full"
           style={{ height: '100%', width: '100%' }}
         >
@@ -24,15 +24,15 @@ export default function HomePage({ geojsonData }) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {geojsonData && (
+          {geojsonData && !showMST && (
             <GeoJSON 
               data={geojsonData} 
               key={JSON.stringify(geojsonData)}
-              style={{ color: '#94a3b8', weight: 2, opacity: 0.5 }}
+              style={{ color: '#94a3b8', weight: 2, opacity: 0.8 }}
             />
           )}
           {/* MST Overlay */}
-          {mst.edges.map((edge, index) => (
+          {showMST && mst.edges.map((edge, index) => (
             <Polyline
               key={index}
               positions={edge.coords.map(([lon, lat]) => [lat, lon])}
