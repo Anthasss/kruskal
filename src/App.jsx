@@ -14,6 +14,7 @@ function App() {
         onGeojsonImport={setGeojsonData} 
         showMST={showMST}
         onToggleMST={() => setShowMST(!showMST)}
+        hasGraph={geojsonData !== null}
       />
       <HomePage geojsonData={geojsonData} showMST={showMST} />
     </div>

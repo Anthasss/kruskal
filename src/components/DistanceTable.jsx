@@ -32,7 +32,7 @@ function calculateDistance(coord1, coord2) {
   return R * c;
 }
 
-export default function DistanceTable({ geojsonData }) {
+export default function DistanceTable({ geojsonData, mstEdges = [] }) {
   const distances = useMemo(() => {
     if (!geojsonData) return [];
 
@@ -78,16 +78,36 @@ export default function DistanceTable({ geojsonData }) {
     return distanceList;
   }, [geojsonData]);
 
+  // Determine which edges are in the MST
+  const distancesWithMST = useMemo(() => {
+    if (!mstEdges || mstEdges.length === 0) {
+      return distances.map(d => ({ ...d, inMST: false }));
+    }
+
+    return distances.map(distance => {
+      const inMST = mstEdges.some(edge => 
+        (edge.from === distance.from && edge.to === distance.to) ||
+        (edge.from === distance.to && edge.to === distance.from)
+      );
+      return { ...distance, inMST };
+    });
+  }, [distances, mstEdges]);
+
   return (
     <div className="w-full h-full bg-base-200 p-4 flex flex-col overflow-hidden">
       <h2 className="text-lg font-bold mb-4 shrink-0">Vertex Distances</h2>
       
-      {distances.length === 0 ? (
+      {distancesWithMST.length === 0 ? (
         <p className="text-sm text-gray-500">Import a GeoJSON file to see distances</p>
       ) : (
         <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
-          {distances.map((item, index) => (
-            <div key={index} className="card bg-base-100 shadow-sm p-3">
+          {distancesWithMST.map((item, index) => (
+            <div 
+              key={index} 
+              className={`card shadow-sm p-3 bg-base-100 ${
+                item.inMST ? 'border-2 border-green-500' : 'border-2 border-red-500'
+              }`}
+            >
               <div className="text-sm">
                 <span className="font-semibold">{item.from}</span>
                 {' → '}

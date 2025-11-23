@@ -85,7 +85,7 @@ export default function HomePage({ geojsonData, showMST }) {
 
       {/* right sidebar - distances */}
       <div className="w-80 h-full">
-        <DistanceTable geojsonData={geojsonData} />
+        <DistanceTable geojsonData={geojsonData} mstEdges={mst.edges} />
       </div>
     </div>
   )
