@@ -5,7 +5,7 @@ import DistanceTable from '../components/DistanceTable';
 import { kruskalMST } from '../utils/kruskal';
 import 'leaflet/dist/leaflet.css';
 
-// Fix for default marker icon
+// import blue marker from leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -14,6 +14,7 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function HomePage({ geojsonData, showMST }) {
+  // memoize MST calculation
   const mst = useMemo(() => { 
     return kruskalMST(geojsonData);
   }, [geojsonData]);

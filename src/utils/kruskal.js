@@ -1,157 +1,36 @@
-// Union-Find (Disjoint Set) data structure for Kruskal's algorithm
-class UnionFind {
-  constructor(size) {
-    this.parent = Array.from({ length: size }, (_, i) => i);
-    this.rank = Array(size).fill(0);
-  }
-
-  find(x) {
-    if (this.parent[x] !== x) {
-      this.parent[x] = this.find(this.parent[x]); // Path compression
-    }
-    return this.parent[x];
-  }
-
-  union(x, y) {
-    const rootX = this.find(x);
-    const rootY = this.find(y);
-
-    if (rootX === rootY) return false; // Already in same set
-
-    // Union by rank
-    if (this.rank[rootX] < this.rank[rootY]) {
-      this.parent[rootX] = rootY;
-    } else if (this.rank[rootX] > this.rank[rootY]) {
-      this.parent[rootY] = rootX;
-    } else {
-      this.parent[rootY] = rootX;
-      this.rank[rootX]++;
-    }
-    return true;
-  }
-}
-
-// Helper function to find closest vertex index for a coordinate
-function findVertexIndex(vertices, coord, tolerance = 0.00001) {
-  for (let i = 0; i < vertices.length; i++) {
-    const [lon1, lat1] = vertices[i].coords;
-    const [lon2, lat2] = coord;
-    const distance = Math.sqrt(Math.pow(lon1 - lon2, 2) + Math.pow(lat1 - lat2, 2));
-    if (distance < tolerance) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-// Calculate distance using Haversine formula
-function calculateDistance(coord1, coord2) {
-  const [lon1, lat1] = coord1;
-  const [lon2, lat2] = coord2;
-  
-  const R = 6371000; // Earth's radius in meters
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δφ = (lat2 - lat1) * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2) * Math.sin(Δλ/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  
-  return R * c;
-}
+import { createUnionFind } from './unionFind';
+import { parseGeoJSON } from './geojsonParser';
+import { pruneUnnamedLeaves } from './mstPruner';
 
 export function kruskalMST(geojsonData) {
+  // return early if no data
   if (!geojsonData) return { edges: [], vertices: [] };
 
-  const vertices = [];
-  const edges = [];
+  // extract vertices and edges from geojson data
+  const { vertices, edges } = parseGeoJSON(geojsonData);
 
-  // Extract vertices (Points) from GeoJSON
-  if (geojsonData.type === 'FeatureCollection') {
-    geojsonData.features.forEach((feature, idx) => {
-      if (feature.geometry.type === 'Point') {
-        vertices.push({
-          id: feature.properties?.name || feature.properties?.id || `Point ${idx}`,
-          coords: feature.geometry.coordinates
-        });
-      }
-    });
-
-    // Extract edges (LineStrings) from GeoJSON
-    geojsonData.features.forEach(feature => {
-      if (feature.geometry.type === 'LineString') {
-        const coords = feature.geometry.coordinates;
-        
-        // Find vertex indices for start and end points of the line
-        const startIdx = findVertexIndex(vertices, coords[0]);
-        const endIdx = findVertexIndex(vertices, coords[coords.length - 1]);
-        
-        if (startIdx !== -1 && endIdx !== -1) {
-          const distance = calculateDistance(coords[0], coords[coords.length - 1]);
-          
-          edges.push({
-            from: vertices[startIdx].id,
-            to: vertices[endIdx].id,
-            fromIndex: startIdx,
-            toIndex: endIdx,
-            distance: distance,
-            coords: [vertices[startIdx].coords, vertices[endIdx].coords]
-          });
-        }
-      }
-    });
-  }
-
-  // Sort edges by distance
+  // sort edges by distance (shortest first)
   edges.sort((a, b) => a.distance - b.distance);
 
-  // Apply Kruskal's algorithm
-  const uf = new UnionFind(vertices.length);
+  // build mst.
+  const uf = createUnionFind(vertices.length);
   const mstEdges = [];
 
   for (const edge of edges) {
+    // try to add edge, if create cycle returns false
     if (uf.union(edge.fromIndex, edge.toIndex)) {
       mstEdges.push(edge);
+      
+      // mst is complete when we have (vertices - 1) edges
       if (mstEdges.length === vertices.length - 1) {
-        break; // MST is complete
+        break;
       }
     }
   }
 
-  // Prune unnamed leaf vertices (vertices whose name starts with "Point")
-  let pruned = true;
-  while (pruned) {
-    pruned = false;
-    
-    // Count degree (number of edges) for each vertex
-    const degree = new Array(vertices.length).fill(0);
-    mstEdges.forEach(edge => {
-      degree[edge.fromIndex]++;
-      degree[edge.toIndex]++;
-    });
-    
-    // Find leaf vertices (degree = 1) that are unnamed
-    const leafToRemove = [];
-    for (let i = 0; i < vertices.length; i++) {
-      if (degree[i] === 1 && vertices[i].id.startsWith('Point')) {
-        leafToRemove.push(i);
-      }
-    }
-    
-    // Remove edges connected to unnamed leaves
-    if (leafToRemove.length > 0) {
-      pruned = true;
-      for (let i = mstEdges.length - 1; i >= 0; i--) {
-        if (leafToRemove.includes(mstEdges[i].fromIndex) || 
-            leafToRemove.includes(mstEdges[i].toIndex)) {
-          mstEdges.splice(i, 1);
-        }
-      }
-    }
-  }
+  // prune unnamed unimportant roads
+  const prunedEdges = pruneUnnamedLeaves(mstEdges, vertices);
 
-  return { edges: mstEdges, vertices };
+  return { edges: prunedEdges, vertices };
 }
+
