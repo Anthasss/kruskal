@@ -19,16 +19,20 @@ export default function HomePage({ geojsonData, showMST, onMstStatsChange }) {
     return kruskalMST(geojsonData);
   }, [geojsonData]);
 
+  // Memoize used vertex indices calculation (shared by namedVertices and mstStats)
+  const usedVertexIndices = useMemo(() => {
+    if (!mst.edges) return new Set();
+    const indices = new Set();
+    mst.edges.forEach(edge => {
+      indices.add(edge.fromIndex);
+      indices.add(edge.toIndex);
+    });
+    return indices;
+  }, [mst.edges]);
+
   // Filter vertices that are part of MST and don't start with "Point"
   const namedVertices = useMemo(() => {
     if (!showMST || !mst.vertices) return [];
-    
-    // Get all vertex indices that are used in MST edges
-    const usedVertexIndices = new Set();
-    mst.edges.forEach(edge => {
-      usedVertexIndices.add(edge.fromIndex);
-      usedVertexIndices.add(edge.toIndex);
-    });
     
     // Filter vertices that are in MST and have names not starting with "Point"
     return mst.vertices
@@ -37,28 +41,25 @@ export default function HomePage({ geojsonData, showMST, onMstStatsChange }) {
         usedVertexIndices.has(vertex.index) && 
         !vertex.id.startsWith('Point')
       );
-  }, [mst, showMST]);
+  }, [mst.vertices, usedVertexIndices, showMST]);
 
-  // Calculate and send MST stats to parent
+  // Memoize MST stats calculation
+  const mstStats = useMemo(() => {
+    if (!mst.vertices || !mst.edges) return null;
+    
+    const totalDistance = mst.edges.reduce((sum, edge) => sum + edge.distance, 0);
+    
+    return {
+      totalVertices: mst.vertices.length,
+      mstVertices: usedVertexIndices.size,
+      totalDistance: totalDistance
+    };
+  }, [mst.vertices, mst.edges, usedVertexIndices]);
+
+  // Send MST stats to parent whenever they change
   useEffect(() => {
-    if (mst.vertices && mst.edges) {
-      const usedVertexIndices = new Set();
-      mst.edges.forEach(edge => {
-        usedVertexIndices.add(edge.fromIndex);
-        usedVertexIndices.add(edge.toIndex);
-      });
-      
-      const totalDistance = mst.edges.reduce((sum, edge) => sum + edge.distance, 0);
-      
-      onMstStatsChange({
-        totalVertices: mst.vertices.length,
-        mstVertices: usedVertexIndices.size,
-        totalDistance: totalDistance
-      });
-    } else {
-      onMstStatsChange(null);
-    }
-  }, [mst, onMstStatsChange]);
+    onMstStatsChange(mstStats);
+  }, [mstStats, onMstStatsChange]);
 
   return (
     <div className="w-full h-full flex overflow-hidden">
@@ -79,7 +80,7 @@ export default function HomePage({ geojsonData, showMST, onMstStatsChange }) {
             <GeoJSON 
               data={geojsonData} 
               key={JSON.stringify(geojsonData)}
-              style={{ color: "yellow", weight: 4, opacity: 0.8 }}
+              style={{ color: "green", weight: 4, opacity: 0.8 }}
             />
           )}
           {/* MST Overlay */}
