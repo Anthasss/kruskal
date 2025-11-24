@@ -7,6 +7,7 @@ import './App.css'
 function App() {
   const [geojsonData, setGeojsonData] = useState(null)
   const [showMST, setShowMST] = useState(true)
+  const [mstStats, setMstStats] = useState(null)
 
   return (
     <div className="w-full h-screen grid grid-rows-[auto_1fr]">
@@ -15,8 +16,9 @@ function App() {
         showMST={showMST}
         onToggleMST={() => setShowMST(!showMST)}
         hasGraph={geojsonData !== null}
+        mstStats={mstStats}
       />
-      <HomePage geojsonData={geojsonData} showMST={showMST} />
+      <HomePage geojsonData={geojsonData} showMST={showMST} onMstStatsChange={setMstStats} />
     </div>
   )
 }

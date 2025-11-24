@@ -1,4 +1,4 @@
-export default function Navbar({ onGeojsonImport, showMST, onToggleMST, hasGraph }) {
+export default function Navbar({ onGeojsonImport, showMST, onToggleMST, hasGraph, mstStats }) {
   const handleFileImport = (event) => {
     const file = event.target.files?.[0];
     if (file && file.name.endsWith('.geojson')) {
@@ -25,7 +25,14 @@ export default function Navbar({ onGeojsonImport, showMST, onToggleMST, hasGraph
       <h1 className="text-xl font-bold">Kruskal Algorithm Simulator</h1>
 
       {/* right action */}
-      <div className="ml-auto h-full flex gap-2 items-center">
+      <div className="ml-auto h-full flex gap-4 items-center">
+        {mstStats && hasGraph && (
+          <div className="flex gap-4 text-sm">
+            <span className="font-semibold">Total Vertices: <span className="text-primary">{mstStats.totalVertices}</span></span>
+            <span className="font-semibold">MST Vertices: <span className="text-secondary">{mstStats.mstVertices}</span></span>
+            <span className="font-semibold">MST Distance: <span className="text-accent">{mstStats.totalDistance.toFixed(2)} km</span></span>
+          </div>
+        )}
         {hasGraph && (
           <button 
             onClick={onToggleMST}
