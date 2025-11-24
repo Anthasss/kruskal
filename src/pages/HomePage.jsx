@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer, GeoJSON, Polyline, Marker, Tooltip } from 'react-leaflet';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import L from 'leaflet';
 import DistanceTable from '../components/DistanceTable';
 import { kruskalMST } from '../utils/kruskal';
@@ -13,7 +13,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-export default function HomePage({ geojsonData, showMST }) {
+export default function HomePage({ geojsonData, showMST, onMstStatsChange }) {
   // memoize MST calculation
   const mst = useMemo(() => { 
     return kruskalMST(geojsonData);
@@ -38,6 +38,27 @@ export default function HomePage({ geojsonData, showMST }) {
         !vertex.id.startsWith('Point')
       );
   }, [mst, showMST]);
+
+  // Calculate and send MST stats to parent
+  useEffect(() => {
+    if (mst.vertices && mst.edges) {
+      const usedVertexIndices = new Set();
+      mst.edges.forEach(edge => {
+        usedVertexIndices.add(edge.fromIndex);
+        usedVertexIndices.add(edge.toIndex);
+      });
+      
+      const totalDistance = mst.edges.reduce((sum, edge) => sum + edge.distance, 0);
+      
+      onMstStatsChange({
+        totalVertices: mst.vertices.length,
+        mstVertices: usedVertexIndices.size,
+        totalDistance: totalDistance
+      });
+    } else {
+      onMstStatsChange(null);
+    }
+  }, [mst, onMstStatsChange]);
 
   return (
     <div className="w-full h-full flex overflow-hidden">
