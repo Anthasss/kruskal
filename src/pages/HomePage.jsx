@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer, GeoJSON, Polyline, Marker, Tooltip } from 'react-leaflet';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import L from 'leaflet';
 import DistanceTable from '../components/DistanceTable';
 import { kruskalMST } from '../utils/kruskal';
@@ -13,22 +13,26 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-export default function HomePage({ geojsonData, showMST }) {
+export default function HomePage({ geojsonData, showMST, onMstStatsChange }) {
   // memoize MST calculation
   const mst = useMemo(() => { 
     return kruskalMST(geojsonData);
   }, [geojsonData]);
 
+  // Memoize used vertex indices calculation (shared by namedVertices and mstStats)
+  const usedVertexIndices = useMemo(() => {
+    if (!mst.edges) return new Set();
+    const indices = new Set();
+    mst.edges.forEach(edge => {
+      indices.add(edge.fromIndex);
+      indices.add(edge.toIndex);
+    });
+    return indices;
+  }, [mst.edges]);
+
   // Filter vertices that are part of MST and don't start with "Point"
   const namedVertices = useMemo(() => {
     if (!showMST || !mst.vertices) return [];
-    
-    // Get all vertex indices that are used in MST edges
-    const usedVertexIndices = new Set();
-    mst.edges.forEach(edge => {
-      usedVertexIndices.add(edge.fromIndex);
-      usedVertexIndices.add(edge.toIndex);
-    });
     
     // Filter vertices that are in MST and have names not starting with "Point"
     return mst.vertices
@@ -37,7 +41,25 @@ export default function HomePage({ geojsonData, showMST }) {
         usedVertexIndices.has(vertex.index) && 
         !vertex.id.startsWith('Point')
       );
-  }, [mst, showMST]);
+  }, [mst.vertices, usedVertexIndices, showMST]);
+
+  // Memoize MST stats calculation
+  const mstStats = useMemo(() => {
+    if (!mst.vertices || !mst.edges) return null;
+    
+    const totalDistance = mst.edges.reduce((sum, edge) => sum + edge.distance, 0);
+    
+    return {
+      totalVertices: mst.vertices.length,
+      mstVertices: usedVertexIndices.size,
+      totalDistance: totalDistance
+    };
+  }, [mst.vertices, mst.edges, usedVertexIndices]);
+
+  // Send MST stats to parent whenever they change
+  useEffect(() => {
+    onMstStatsChange(mstStats);
+  }, [mstStats, onMstStatsChange]);
 
   return (
     <div className="w-full h-full flex overflow-hidden">
