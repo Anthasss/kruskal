@@ -30,7 +30,7 @@ export default function Navbar({ onGeojsonImport, showMST, onToggleMST, hasGraph
           <div className="flex gap-4 text-sm">
             <span className="font-semibold">Total Vertices: <span className="text-primary">{mstStats.totalVertices}</span></span>
             <span className="font-semibold">MST Vertices: <span className="text-secondary">{mstStats.mstVertices}</span></span>
-            <span className="font-semibold">MST Distance: <span className="text-accent">{mstStats.totalDistance.toFixed(2)} km</span></span>
+            <span className="font-semibold">MST Distance: <span className="text-accent">{mstStats.totalDistance.toFixed(2)} m</span></span>
           </div>
         )}
         {hasGraph && (
